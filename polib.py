@@ -145,6 +145,22 @@ def mofile(mofile, **kwargs):
 # function detect_encoding() {{{
 
 
+def _is_file(filename_or_contents):
+    """
+    Safely returns the value of os.path.exists(filename_or_contents).
+
+    Arguments:
+
+    ``filename_or_contents``
+        either a filename, or a string holding the contents of some file.
+        In the latter case, this function will always return False.
+    """
+    try:
+        return os.path.exists(filename_or_contents)
+    except (ValueError, UnicodeEncodeError):
+        return False
+
+
 def detect_encoding(file, binary_mode=False):
     """
     Try to detect the encoding used by the ``file``. The ``file`` argument can
@@ -172,10 +188,7 @@ def detect_encoding(file, binary_mode=False):
             return False
         return True
 
-    try:
-        is_file = os.path.exists(file)
-    except (ValueError, UnicodeEncodeError):
-        is_file = False
+    is_file = _is_file(file)
 
     if not is_file:
         match = rxt.search(file)
@@ -270,7 +283,7 @@ class _BaseFile(list):
         list.__init__(self)
         # the opened file handle
         pofile = kwargs.get('pofile', None)
-        if pofile and os.path.exists(pofile):
+        if pofile and _is_file(pofile):
             self.fpath = pofile
         else:
             self.fpath = kwargs.get('fpath')
@@ -1126,7 +1139,7 @@ class _POFileParser(object):
             file (optional, default: ``False``).
         """
         enc = kwargs.get('encoding', default_encoding)
-        if os.path.exists(pofile):
+        if _is_file(pofile):
             try:
                 self.fhandle = codecs.open(pofile, 'rU', enc)
             except LookupError:
